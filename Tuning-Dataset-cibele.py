@@ -6,12 +6,14 @@ import os, sys , shutil
 import multiprocessing
 import numpy as np
 
-sys.path += [os.path.expanduser('~/work/physion/src/')]
+sys.path += ['./physion/src']
 from physion.analysis.read_NWB\
-                         import scan_folder_for_NWBfiles, Data
+                import scan_folder_for_NWBfiles, Data
 from physion.analysis.episodes.build import EpisodeData
 from physion.analysis.protocols.orientation_tuning\
-                        import compute_tuning_response_per_cells
+                import compute_tuning_response_per_cells
+
+parallelized, debug = False, False 
 
 # %% 
 ########################################################
@@ -95,7 +97,7 @@ def process_file(filename, i, c):
             Episodes = EpisodeData(data, 
                                     quantities=quantities,
                                     protocol_name=protocol_name, 
-                                    verbose=False)
+                                    verbose=debug)
 
             Tuning = compute_tuning_response_per_cells(data, Episodes, 
                                                         quantity='dFoF', 
@@ -103,7 +105,8 @@ def process_file(filename, i, c):
                                                         response_significance_threshold =\
                                                             response_significance_threshold, 
                                                         contrast =\
-                                                            float(c.split('contrast-')[1][:3]))
+                                                            float(c.split('contrast-')[1][:3]),
+                                                        verbose=debug)
             Tuning['datafile'] = filename
             Tuning['nROIs_original'] = data.original_nROIs
             Tuning['nROIs_final'] = data.nROIs
@@ -130,7 +133,7 @@ def process_file(filename, i, c):
 
 if __name__=='__main__':
 
-    import physion
+    from physion.assembling.dataset import read_spreadsheet
 
     cpus = multiprocessing.cpu_count()-1 # leaving 1 cpu for the rest
 
@@ -147,13 +150,12 @@ if __name__=='__main__':
         table = datasets[c]['datafolder'].replace('NWBs', 'DataTable.xlsx')
 
         dataset_table, subjects_table, analysis =\
-                physion.assembling.dataset.read_spreadsheet(table,
-                    get_metadata_from='table')
+                read_spreadsheet(table, get_metadata_from='table')
         print()
         print()
         print('=================================================================')
         print('-----------------------------------------------------------------')
-        print('------- %i) computing : %s ' % (n, c))
+        print('------- %i) computing : %s ' % (n+1, c))
         print('-----------------------------------------------------------------')
         print()
 
@@ -171,34 +173,35 @@ if __name__=='__main__':
 
 
 
-            ################################################
-            ###    parallelization here !   #################
-            ################################################
-            nruns = int(len(DATASET['files'][cond])/cpus)+1
+            if parallelized:
+                ################################################
+                ###    parallelization here !   #################
+                ################################################
+                nruns = int(len(DATASET['files'][cond])/cpus)+1
 
-            for r in range(nruns):
-                i0 = r*cpus
-                imax = np.min([i0+cpus, len(DATASET['files'][cond])]) 
-                print(' - running set of files %i:%i' % (i0, imax))
+                for r in range(nruns):
+                    i0 = r*cpus
+                    imax = np.min([i0+cpus, len(DATASET['files'][cond])]) 
+                    print(' - running set of files %i:%i' % (i0, imax))
 
-                # start the processes
-                procs = []
-                for i in range(i0,imax):
-                    proc = multiprocessing.Process(\
-                                        target=process_file, 
-                                        args=(DATASET['files'][cond][i], i, c))
-                    procs.append(proc)
-                    proc.start()
+                    # start the processes
+                    procs = []
+                    for i in range(i0,imax):
+                        proc = multiprocessing.Process(\
+                                            target=process_file, 
+                                            args=(DATASET['files'][cond][i], i, c))
+                        procs.append(proc)
+                        proc.start()
 
-                # complete the processes
-                for proc in procs:
-                    proc.join()
-
-            #####################################
-            ###### UN-PARALLELIZED VERSION ######
-            # for i, f in enumerate(DATASET['files'][cond]):
-            #     process_file(f, i, c)
-            #####################################
+                    # complete the processes
+                    for proc in procs:
+                        proc.join()
+            else:
+                #####################################
+                ###### UN-PARALLELIZED VERSION ######
+                for i, f in enumerate(DATASET['files'][cond]):
+                    process_file(f, i, c)
+                #####################################
 
             # now that we have stored all datafile outputs
             Tunings = []

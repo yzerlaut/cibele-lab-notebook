@@ -3,21 +3,20 @@
 
 # %%
 import os
-os.environ["QT_DEBUG_PLUGINS"] = "1"
-os.environ["QT_QPA_PLATFORM"] = "offscreen"
-os.environ["DISPLAY"] = ""
+# os.environ["QT_DEBUG_PLUGINS"] = "1"
+# os.environ["QT_QPA_PLATFORM"] = "offscreen"
+# os.environ["DISPLAY"] = ""
 
 import os, sys , shutil 
 import multiprocessing
 import numpy as np
 
-# sys.path += ['./physion/src/',os.path.expanduser('~/physion/src/')]
-sys.path += [os.path.expanduser('~/work/physion/src/')]
+sys.path += ['./physion/src']
 from physion.analysis.read_NWB\
-                         import scan_folder_for_NWBfiles, Data
+                import scan_folder_for_NWBfiles, Data
 from physion.analysis.episodes.build import EpisodeData
 from physion.analysis.protocols.orientation_tuning\
-                        import compute_tuning_response_per_cells
+                import compute_tuning_response_per_cells
 
 # %% 
 ########################################################
@@ -47,6 +46,9 @@ nMIN_DATAFILES = 2
 
 summary_folder = os.path.join(os.path.expanduser('~'), 
                               'CURATED', 'Cibele', 'summary')
+
+parallelized = False
+debug = False
 
 datasets = {}
 for c in folders:
@@ -99,23 +101,29 @@ def process_file(filename, i, c):
     if data.nROIs>=nMIN_ROIs:
 
         try:
+
             # deconvolve first:
             data.build_Deconvolved(Tau=TAU_DECONVOLUTION)
             # process episodes
             Episodes = EpisodeData(data, 
                                     quantities=quantities,
                                     protocol_name=protocol_name, 
-                                    verbose=False)
+                                    verbose=debug)
 
+            contrast = float(c.split('contrast-')[1][:3])
             epCond = Episodes.find_episode_cond(key='contrast',
-                                                value=float(c.split('contrast-')[1][:3]))
+                                                value=contrast)
 
             significant = np.zeros(data.nROIs, dtype=bool)
             for i in range(data.nROIs):
-                    cell_resp = Episodes.compute_summary_data(stat_test_props,
-                                                              exclude_keys=['repeat', 'angle'],
-                                                              response_args=dict(quantity='Deconvolved',
-                                                                                 roiIndex=i))
+                    cell_resp = Episodes.pre_post_statistics(stat_test_props=stat_test_props,
+                                                             episode_cond=epCond,
+                                                             repetition_keys=['repeat', 'angle'],
+                                                             response_significance_threshold=\
+                                                                response_significance_threshold,
+                                                             response_args=dict(quantity='Deconvolved',
+                                                                                roiIndex=i),
+                                                            verbose=debug)
                     cond = (cell_resp['contrast']==contrast)
                     significant[i] = cell_resp['significant'][cond][0]
                     
@@ -132,7 +140,9 @@ def process_file(filename, i, c):
                                  'tempResponse-%s-%i.npy' % (c, i)),
                     Response)
             print('      [v] --> included, n=%i ROIs ' % data.nROIs)
+
         except BaseException as be:
+
             print('                        [-------------------------------]')
             print(be)
             print()
@@ -148,9 +158,8 @@ def process_file(filename, i, c):
 
 if __name__=='__main__':
 
-    import physion
+    from physion.assembling.dataset import read_spreadsheet
 
-    parallel = False
     cpus = multiprocessing.cpu_count()-1 # leaving 1 cpu for the rest
 
     # temporary folder for parallelization
@@ -166,13 +175,12 @@ if __name__=='__main__':
         table = datasets[c]['datafolder'].replace('NWBs', 'DataTable.xlsx')
 
         dataset_table, subjects_table, analysis =\
-                physion.assembling.dataset.read_spreadsheet(table,
-                    get_metadata_from='table')
+                read_spreadsheet(table, get_metadata_from='table')
         print()
         print()
         print('=================================================================')
         print('-----------------------------------------------------------------')
-        print('------- %i) computing : %s ' % (n, c))
+        print('------- %i) computing : %s ' % (n+1, c))
         print('-----------------------------------------------------------------')
         print()
 
@@ -191,7 +199,7 @@ if __name__=='__main__':
 
         if len(DATASET['files'][cond])>nMIN_DATAFILES:
 
-            if parallel:
+            if parallelized:
                 ################################################
                 ###    parallelization here !   #################
                 ################################################
@@ -219,7 +227,7 @@ if __name__=='__main__':
             else:
                 #####################################
                 ###### UN-PARALLELIZED VERSION ######
-                for i, f in enumerate(DATASET['files'][cond]):
+                for i, f in enumerate(DATASET['files'][cond][1:]):
                     process_file(f, i, c)
                 #####################################
 
