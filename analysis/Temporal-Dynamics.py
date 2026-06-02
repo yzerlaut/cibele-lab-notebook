@@ -14,56 +14,9 @@ sys.path += [os.path.join(os.path.expanduser('~'),\
 from physion.analysis.read_NWB\
                 import scan_folder_for_NWBfiles, Data
 from physion.analysis.episodes.build import EpisodeData
-from physion.analysis.protocols.orientation_tuning\
-                import compute_tuning_response_per_cells
 
-# %% 
-########################################################
-###      build DATASETS of different conditions  #######
-########################################################
+from Dataset_Organization import datasets
 
-base_path = os.path.expanduser('~/CURATED/Cibele/')
-folders = [
-    #SST-cells_cond-GluN1-KO_Adult_V1",
-    # "PV-cells_WT_Adult_V1", 
-    # "PV-cells_WT_Young_V1", 
-    # "PV-cells_cond-GluN1-KO_Adult_V1", 
-     "PYR-PV-SynGCaMP_WT_Young_V1",
-     "SST-cells_cond-GluN1-KO_Young_V1",
-    # "SST-cells_WT_Adult_V1",
-    # "SST-cells_WT_Young_V1",
-    # "SST-cells_cond-GluN1-KO_Adult_V1_Taddy",
-    # "SST-cells_WT_Adult_V1_Taddy"
-]
-
-# age intervals in Yound
-AGE_INTERVALS = [\
-    (15,19), (20,23), (24,27), (16,21), (22,27)]
-
-# to be a valid dataset:
-nMIN_DATAFILES = 2
-
-summary_folder = os.path.join(os.path.expanduser('~'), 
-                              'CURATED', 'Cibele', 'summary')
-
-parallelized = False
-debug = False
-
-datasets = {}
-for c in folders:
-
-    for contrast in [0.5, 1.0]:
-
-        datasets[c+'_contrast-%.1f' % contrast] =\
-              {'datafolder':os.path.join(base_path, c, 'NWBs'), 
-                'age_interval':None}
-        
-        # we split young animals into age groups
-        if 'Young' in c:
-            for interval in AGE_INTERVALS:
-                datasets[c.replace('Young', 'P%i-P%i' % interval)+'_contrast-%.1f' % contrast] =\
-                    {'datafolder':os.path.join(base_path, c, 'NWBs'), 
-                        'age_interval':interval}
                 
 # %%
 def process_file(filename, i, c):

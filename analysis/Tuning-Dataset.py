@@ -15,52 +15,8 @@ from physion.analysis.protocols.orientation_tuning\
                 import compute_tuning_response_per_cells
 
 parallelized, debug = False, False 
+from Dataset_Organization import datasets, summary_folder
 
-# %% 
-########################################################
-###      build DATASETS of different conditions  #######
-########################################################
-
-base_path = os.path.expanduser('~/CURATED/Cibele/')
-folders = [
-    #"SST-cells_cond-GluN1-KO_Adult_V1",
-    # "PV-cells_WT_Adult_V1", 
-    # "PV-cells_WT_Young_V1", 
-    # "PV-cells_cond-GluN1-KO_Adult_V1", 
-     "PYR-PV-SynGCaMP_WT_Young_V1",
-     "SST-cells_cond-GluN1-KO_Young_V1",
-    # "SST-cells_WT_Adult_V1",
-    # "SST-cells_WT_Young_V1",
-    # "SST-cells_cond-GluN1-KO_Adult_V1_Taddy",
-    # "SST-cells_WT_Adult_V1_Taddy"
-]
-
-# age intervals in Yound
-AGE_INTERVALS = [\
-    (15,19), (20,23), (24,27)]
-
-# to be a valid dataset:
-nMIN_DATAFILES = 2
-
-summary_folder = os.path.join(os.path.expanduser('~'), 
-                              'CURATED', 'Cibele', 'summary')
-
-datasets = {}
-for c in folders:
-
-    for contrast in [0.5, 1.0]:
-
-        datasets[c+'_contrast-%.1f' % contrast] =\
-              {'datafolder':os.path.join(base_path, c, 'NWBs'), 
-                'age_interval':None}
-        
-        # we split young animals into age groups
-        if 'Young' in c:
-            for interval in AGE_INTERVALS:
-                datasets[c.replace('Young', 'P%i-P%i' % interval)+'_contrast-%.1f' % contrast] =\
-                    {'datafolder':os.path.join(base_path, c, 'NWBs'), 
-                        'age_interval':interval}
-                
 # %%
 def process_file(filename, i, c):
 
@@ -162,60 +118,58 @@ if __name__=='__main__':
 
         DATASET = scan_folder_for_NWBfiles(datasets[c]['datafolder'])
 
-        # FILTER
+        #   FILTER:
+        # ----------
         # 1) protocol type: orientation tuning
         cond = np.array([np.sum(['8orientation' in p for p in protocols])\
                         for protocols in DATASET['protocols']], dtype=bool)
-        print(cond)
-        print(np.sum(cond))
         # 2) age condition
-        if datasets[c]['age_interval'] is not None:
+        if (datasets[c]['age_interval'] is not None):
             cond = cond &\
                 (DATASET['ages']>=datasets[c]['age_interval'][0]) &\
                 (DATASET['ages']<=datasets[c]['age_interval'][1])
 
 
+        if parallelized:
+            ################################################
+            ###    parallelization here !   #################
+            ################################################
+            nruns = int(len(DATASET['files'][cond])/cpus)+1
 
-            if parallelized:
-                ################################################
-                ###    parallelization here !   #################
-                ################################################
-                nruns = int(len(DATASET['files'][cond])/cpus)+1
+            for r in range(nruns):
+                i0 = r*cpus
+                imax = np.min([i0+cpus, len(DATASET['files'][cond])]) 
+                print(' - running set of files %i:%i' % (i0, imax))
 
-                for r in range(nruns):
-                    i0 = r*cpus
-                    imax = np.min([i0+cpus, len(DATASET['files'][cond])]) 
-                    print(' - running set of files %i:%i' % (i0, imax))
+                # start the processes
+                procs = []
+                for i in range(i0,imax):
+                    proc = multiprocessing.Process(\
+                                        target=process_file, 
+                                        args=(DATASET['files'][cond][i], i, c))
+                    procs.append(proc)
+                    proc.start()
 
-                    # start the processes
-                    procs = []
-                    for i in range(i0,imax):
-                        proc = multiprocessing.Process(\
-                                            target=process_file, 
-                                            args=(DATASET['files'][cond][i], i, c))
-                        procs.append(proc)
-                        proc.start()
-
-                    # complete the processes
-                    for proc in procs:
-                        proc.join()
-            else:
-                #####################################
-                ###### UN-PARALLELIZED VERSION ######
-                for i, f in enumerate(DATASET['files'][cond]):
-                    process_file(f, i, c)
-                #####################################
-
-            # now that we have stored all datafile outputs
-            Tunings = []
+                # complete the processes
+                for proc in procs:
+                    proc.join()
+        else:
+            #####################################
+            ###### UN-PARALLELIZED VERSION ######
             for i, f in enumerate(DATASET['files'][cond]):
+                process_file(f, i, c)
+            #####################################
 
-                if os.path.isfile(os.path.join(summary_folder, 'temp', 
-                                              'Tuning-%s-%i.npy' % (c, i))):
-                    Tuning = np.load(os.path.join(summary_folder, 'temp', 
-                                                'Tuning-%s-%i.npy' % (c, i)),
-                                        allow_pickle=True).item()
-                    Tunings.append(Tuning)
+        # now that we have stored all datafile outputs
+        Tunings = []
+        for i, f in enumerate(DATASET['files'][cond]):
+
+            if os.path.isfile(os.path.join(summary_folder, 'temp', 
+                                            'Tuning-%s-%i.npy' % (c, i))):
+                Tuning = np.load(os.path.join(summary_folder, 'temp', 
+                                            'Tuning-%s-%i.npy' % (c, i)),
+                                    allow_pickle=True).item()
+                Tunings.append(Tuning)
 
             # # saving data
             np.save(os.path.join(summary_folder, 'Tunings_%s.npy' % c), Tunings)
