@@ -161,11 +161,12 @@ if __name__=='__main__':
 
         DATASET = scan_folder_for_NWBfiles(datasets[c]['datafolder'])
 
-        print(DATASET) 
         # FILTER
         # 1) protocol type: orientation tuning
         cond = np.array([np.sum(['8orientation' in p for p in protocols])\
                         for protocols in DATASET['protocols']], dtype=bool)
+        print(cond)
+        print(np.sum(cond))
         # 2) age condition
         if datasets[c]['age_interval'] is not None:
             cond = cond &\
