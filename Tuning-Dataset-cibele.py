@@ -141,7 +141,7 @@ if __name__=='__main__':
     os.makedirs(os.path.join(summary_folder, 'temp'), exist_ok=True)
 
     Nstart = 0
-    Nend = len(datasets)
+    Nend = 1#len(datasets)
 
     for n in range(Nstart, Nend):
 
@@ -160,7 +160,8 @@ if __name__=='__main__':
         print()
 
         DATASET = scan_folder_for_NWBfiles(datasets[c]['datafolder'])
-        
+
+        print(DATASET) 
         # FILTER
         # 1) protocol type: orientation tuning
         cond = np.array([np.sum(['8orientation' in p for p in protocols])\
