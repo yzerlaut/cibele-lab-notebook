@@ -15,6 +15,8 @@ from physion.analysis.protocols.orientation_tuning\
                 import compute_tuning_response_per_cells
 
 parallelized, debug = False, False 
+
+# load the dataset locations:
 from Dataset_Organization import datasets, summary_folder
 
 # %%
@@ -128,7 +130,6 @@ if __name__=='__main__':
             cond = cond &\
                 (DATASET['ages']>=datasets[c]['age_interval'][0]) &\
                 (DATASET['ages']<=datasets[c]['age_interval'][1])
-
 
         if parallelized:
             ################################################

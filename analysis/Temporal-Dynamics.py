@@ -15,8 +15,13 @@ from physion.analysis.read_NWB\
                 import scan_folder_for_NWBfiles, Data
 from physion.analysis.episodes.build import EpisodeData
 
-from Dataset_Organization import datasets
+parallelized, debug = False, False 
 
+# load the dataset locations:
+from Dataset_Organization import datasets, summary_folder
+
+# to be a valid dataset:
+nMIN_DATAFILES = 2
                 
 # %%
 def process_file(filename, i, c):

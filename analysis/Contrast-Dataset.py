@@ -16,52 +16,12 @@ from physion.analysis.protocols.contrast_sensitivity\
                         import compute_sensitivity_per_cells
 
 from physion.analysis.episodes.build import EpisodeData
-parallelized = False
-# %% 
-########################################################
-###      build DATASETS of different conditions  #######
-########################################################
 
-base_path = os.path.expanduser('~/CURATED/Cibele/')
-folders = [
-    #"SST-cells_cond-GluN1-KO_Adult_V1",
-    # "PV-cells_WT_Adult_V1", 
-    # "PV-cells_WT_Young_V1", 
-    # "PV-cells_cond-GluN1-KO_Adult_V1", 
-     "PYR-PV-SynGCaMP_WT_Young_V1",
-     "SST-cells_cond-GluN1-KO_Young_V1",
-    # "SST-cells_WT_Adult_V1",
-    # "SST-cells_WT_Young_V1",
-    # "SST-cells_cond-GluN1-KO_Adult_V1_Taddy",
-    # "SST-cells_WT_Adult_V1_Taddy"
-]
+parallelized, debug = False, False 
 
-# age intervals in Yound
-AGE_INTERVALS = [\
-    (15,19), (20,23), (24,27)]
+# load the dataset locations:
+from Dataset_Organization import datasets, summary_folder
 
-# to be a valid dataset:
-nMIN_DATAFILES = 2
-
-summary_folder = os.path.join(os.path.expanduser('~'), 
-                              'CURATED', 'Cibele', 'summary')
-
-datasets = {}
-for c in folders:
-
-    for angle in [0., 90.]:
-
-        datasets[c+'_angle-%.1f' % angle] =\
-              {'datafolder':os.path.join(base_path, c, 'NWBs'), 
-                'age_interval':None}
-        
-        # we split young animals into age groups
-        if 'Young' in c:
-            for interval in AGE_INTERVALS:
-                datasets[c.replace('Young', 'P%i-P%i' % interval)+'_angle-%.1f' % angle] =\
-                    {'datafolder':os.path.join(base_path, c, 'NWBs'), 
-                        'age_interval':interval}
-                
 # %%
 # to be a valid dataset:
 nMIN_DATAFILES = 2
@@ -164,7 +124,6 @@ if __name__=='__main__':
                 (DATASET['ages']>=datasets[c]['age_interval'][0]) &\
                 (DATASET['ages']<=datasets[c]['age_interval'][1])
 
-
         if len(DATASET['files'][cond])>nMIN_DATAFILES:
 
             if parallelized:
@@ -198,7 +157,7 @@ if __name__=='__main__':
                 #####################################
 
             # now that we have stored all datafile outputs
-            Sensitivitys = []
+            Sensitivities = []
             for i, f in enumerate(DATASET['files'][cond]):
 
                 if os.path.isfile(os.path.join(summary_folder, 'temp', 
@@ -206,11 +165,11 @@ if __name__=='__main__':
                     Sensitivity = np.load(os.path.join(summary_folder, 'temp', 
                                                 'Sensitivity-%s-%i.npy' % (c, i)),
                                         allow_pickle=True).item()
-                    Sensitivitys.append(Sensitivity)
+                    Sensitivities.append(Sensitivity)
 
             # # saving data
             np.save(os.path.join(summary_folder, 'Sensitivities_%s.npy' % c), 
-                    Sensitivitys)
+                    Sensitivities)
 
         else:
             print()
