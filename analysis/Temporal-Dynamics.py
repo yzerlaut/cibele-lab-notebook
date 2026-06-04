@@ -21,6 +21,8 @@ parallelized, debug = False, False
 from Dataset_Organization import datasets_func, summary_folder
 datasets = datasets_func('contrast', [0.5, 1.0])
 
+from Preprocessing_Settings import get_dFoF_params
+
 # to be a valid dataset:
 nMIN_DATAFILES = 2
                 
@@ -30,13 +32,8 @@ def process_file(filename, i, c):
     # to be a valid datafile:
     nMIN_ROIs = 4
     # calcium pre-processing params
-    dFoF_parameters = dict(\
-            roi_to_neuropil_fluo_inclusion_factor=1.15,
-            neuropil_correction_factor = 0.7,
-            method_for_F0 = 'sliding_percentile',
-            percentile=5., # percent
-            sliding_window = 5*60, # seconds
-    )
+    dFoF_parameters = get_dFoF_params(c)
+
     TAU_DECONVOLUTION = 0.8
 
     # statistical test for visually-evoked-responses
