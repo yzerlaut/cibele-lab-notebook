@@ -31,7 +31,8 @@ def process_file(filename, i, c):
 
     # to be a valid datafile:
     nMIN_ROIs = 4
-    # calcium pre-processing params
+
+    # CELL-dependent calcium pre-processing params 
     dFoF_parameters = get_dFoF_params(c)
 
     TAU_DECONVOLUTION = 0.8
