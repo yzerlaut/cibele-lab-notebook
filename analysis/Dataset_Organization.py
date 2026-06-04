@@ -29,22 +29,26 @@ nMIN_DATAFILES = 2
 parallelized = False
 debug = False
 
-datasets = {}
-for c in folders:
+def datasets_func(\
+        key='contrast',
+        values=[0.5,1.0]):
 
-    for contrast in [0.5, 1.0]:
+    datasets = {}
+    for c in folders:
 
-        datasets[c+'_contrast-%.1f' % contrast] =\
-              {'datafolder':os.path.join(base_path, c, 'NWBs'), 
-                'age_interval':None}
-        
-        # we split young animals into age groups
-        if 'Young' in c:
-            for interval in AGE_INTERVALS:
-                datasets[c.replace('Young', 'P%i-P%i' % interval)+'_contrast-%.1f' % contrast] =\
-                    {'datafolder':os.path.join(base_path, c, 'NWBs'), 
-                        'age_interval':interval}
+        for val in values:
 
+            datasets[c+'_%s-%.1f' % (key, val)] =\
+                {'datafolder':os.path.join(base_path, c, 'NWBs'), 
+                    'age_interval':None}
+            
+            # we split young animals into age groups
+            if 'Young' in c:
+                for interval in AGE_INTERVALS:
+                    datasets[c.replace('Young', 'P%i-P%i' % interval)+'_%s-%.1f' % (key,val)] =\
+                        {'datafolder':os.path.join(base_path, c, 'NWBs'), 
+                            'age_interval':interval}
+    return datasets
 
 if __name__=='__main__':
     from pprint import pprint

@@ -18,7 +18,8 @@ from physion.analysis.episodes.build import EpisodeData
 parallelized, debug = False, False 
 
 # load the dataset locations:
-from Dataset_Organization import datasets, summary_folder
+from Dataset_Organization import datasets_func, summary_folder
+datasets = datasets_func('contrast', [0.5, 1.0])
 
 # to be a valid dataset:
 nMIN_DATAFILES = 2

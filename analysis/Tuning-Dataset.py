@@ -17,7 +17,8 @@ from physion.analysis.protocols.orientation_tuning\
 parallelized, debug = False, False 
 
 # load the dataset locations:
-from Dataset_Organization import datasets, summary_folder
+from Dataset_Organization import datasets_func, summary_folder
+datasets = datasets_func('contrast', [0.5, 1.0])
 
 # %%
 def process_file(filename, i, c):

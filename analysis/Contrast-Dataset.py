@@ -20,7 +20,9 @@ from physion.analysis.episodes.build import EpisodeData
 parallelized, debug = False, False 
 
 # load the dataset locations:
-from Dataset_Organization import datasets, summary_folder
+from Dataset_Organization import datasets_func, summary_folder
+
+datasets = datasets_func('angle', [0., 90.])
 
 # %%
 # to be a valid dataset:
@@ -53,12 +55,14 @@ def process_file(filename, i, c):
 
     if data.nROIs>=nMIN_ROIs:
 
-        try:
+        # try:
+        if True:
             Episodes = EpisodeData(data, 
                                     quantities=['dFoF'], 
                                     protocol_name=protocol_name, 
                                     verbose=False)
 
+            print(c)
             Sensitivity = compute_sensitivity_per_cells(data, Episodes, 
                                                         quantity='dFoF', 
                                                         stat_test_props=stat_test_props, 
@@ -74,12 +78,12 @@ def process_file(filename, i, c):
                                  'Sensitivity-%s-%i.npy' % (c, i)),
                     Sensitivity)
             print('      [v] --> included, n=%i ROIs ' % data.nROIs)
-        except BaseException as be:
-            print('                        [-------------------------------]')
-            print(be)
-            print()
-            print('      [X] --> discarded, problem in datafile, CHECK [!!]')
-            print('                        [-------------------------------]')
+        # except BaseException as be:
+        #     print('                        [-------------------------------]')
+        #     print(be)
+        #     print()
+        #     print('      [X] --> discarded, problem in datafile, CHECK [!!]')
+        #     print('                        [-------------------------------]')
 
     else:
         print('      [X] --> discarded, n=%i ROIs ' % data.nROIs)
