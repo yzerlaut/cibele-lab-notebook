@@ -71,17 +71,17 @@ def process_file(filename, i, c):
                                                 value=contrast)
 
             significant = np.zeros(data.nROIs, dtype=bool)
-            for i in range(data.nROIs):
+            for r in range(data.nROIs):
                     cell_resp = Episodes.pre_post_statistics(stat_test_props=stat_test_props,
                                                              episode_cond=epCond,
                                                              repetition_keys=['repeat', 'angle'],
                                                              response_significance_threshold=\
                                                                 response_significance_threshold,
                                                              response_args=dict(quantity='Deconvolved',
-                                                                                roiIndex=i),
+                                                                                roiIndex=r),
                                                             verbose=debug)
                     cond = (cell_resp['contrast']==contrast)
-                    significant[i] = cell_resp['significant'][cond][0]
+                    significant[r] = cell_resp['significant'][cond][0]
                     
             Response = {
                     't':Episodes.t,
@@ -183,7 +183,7 @@ if __name__=='__main__':
             else:
                 #####################################
                 ###### UN-PARALLELIZED VERSION ######
-                for i, f in enumerate(DATASET['files'][cond][1:]):
+                for i, f in enumerate(DATASET['files'][cond]):
                     process_file(f, i, c)
                 #####################################
 

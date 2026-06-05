@@ -171,8 +171,8 @@ if __name__=='__main__':
                                     allow_pickle=True).item()
                 Tunings.append(Tuning)
 
-            # # saving data
-            np.save(os.path.join(summary_folder, 'Tunings_%s.npy' % c), Tunings)
+        # # saving data
+        np.save(os.path.join(summary_folder, 'Tunings_%s.npy' % c), Tunings)
 
         else:
             print()
