@@ -182,7 +182,7 @@ if __name__=='__main__':
 
         print('-----------------------------------------------------------------')
         print('=================================================================')
-    shutil.rmtree(os.path.join(summary_folder, 'temp'))
+    # shutil.rmtree(os.path.join(summary_folder, 'temp'))
 
 # %%
 #f = '/home/user/CURATED/Cibele/SST-cells_cond-GluN1-KO_Adult_V1/NWBs/2026_02_18-14-42-43.nwb'

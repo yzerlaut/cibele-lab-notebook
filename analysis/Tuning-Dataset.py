@@ -187,7 +187,7 @@ if __name__=='__main__':
 
         print('-----------------------------------------------------------------')
         print('=================================================================')
-    shutil.rmtree(os.path.join(summary_folder, 'temp'))
+    # shutil.rmtree(os.path.join(summary_folder, 'temp'))
 
 # %%
 if False:
