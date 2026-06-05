@@ -99,7 +99,7 @@ if __name__=='__main__':
     os.makedirs(os.path.join(summary_folder, 'temp'), exist_ok=True)
 
     Nstart = 0
-    Nend = 1#len(datasets)
+    Nend = len(datasets)
 
     for n in range(Nstart, Nend):
 
@@ -124,55 +124,58 @@ if __name__=='__main__':
         # 1) protocol type: orientation tuning
         cond = np.array([np.sum(['8orientation' in p for p in protocols])\
                         for protocols in DATASET['protocols']], dtype=bool)
-        # 2) age condition
+        # 2) age condition (not None only if young)
         if (datasets[c]['age_interval'] is not None):
             cond = cond &\
                 (DATASET['ages']>=datasets[c]['age_interval'][0]) &\
                 (DATASET['ages']<=datasets[c]['age_interval'][1])
 
-        if parallelized:
-            ################################################
-            ###    parallelization here !   #################
-            ################################################
-            nruns = int(len(DATASET['files'][cond])/cpus)+1
+        if np.sum(cond)>0:
+            # MINIMUM NUMBER OF SESSION (1 for now)
 
-            for r in range(nruns):
-                i0 = r*cpus
-                imax = np.min([i0+cpus, len(DATASET['files'][cond])]) 
-                print(' - running set of files %i:%i' % (i0, imax))
+            if parallelized:
+                ################################################
+                ###    parallelization here !   #################
+                ################################################
+                nruns = int(len(DATASET['files'][cond])/cpus)+1
 
-                # start the processes
-                procs = []
-                for i in range(i0,imax):
-                    proc = multiprocessing.Process(\
-                                        target=process_file, 
-                                        args=(DATASET['files'][cond][i], i, c))
-                    procs.append(proc)
-                    proc.start()
+                for r in range(nruns):
+                    i0 = r*cpus
+                    imax = np.min([i0+cpus, len(DATASET['files'][cond])]) 
+                    print(' - running set of files %i:%i' % (i0, imax))
 
-                # complete the processes
-                for proc in procs:
-                    proc.join()
-        else:
-            #####################################
-            ###### UN-PARALLELIZED VERSION ######
+                    # start the processes
+                    procs = []
+                    for i in range(i0,imax):
+                        proc = multiprocessing.Process(\
+                                            target=process_file, 
+                                            args=(DATASET['files'][cond][i], i, c))
+                        procs.append(proc)
+                        proc.start()
+
+                    # complete the processes
+                    for proc in procs:
+                        proc.join()
+            else:
+                #####################################
+                ###### UN-PARALLELIZED VERSION ######
+                for i, f in enumerate(DATASET['files'][cond]):
+                    process_file(f, i, c)
+                #####################################
+
+            # now that we have stored all datafile outputs
+            Tunings = []
             for i, f in enumerate(DATASET['files'][cond]):
-                process_file(f, i, c)
-            #####################################
 
-        # now that we have stored all datafile outputs
-        Tunings = []
-        for i, f in enumerate(DATASET['files'][cond]):
+                if os.path.isfile(os.path.join(summary_folder, 'temp', 
+                                                'Tuning-%s-%i.npy' % (c, i))):
+                    Tuning = np.load(os.path.join(summary_folder, 'temp', 
+                                                'Tuning-%s-%i.npy' % (c, i)),
+                                        allow_pickle=True).item()
+                    Tunings.append(Tuning)
 
-            if os.path.isfile(os.path.join(summary_folder, 'temp', 
-                                            'Tuning-%s-%i.npy' % (c, i))):
-                Tuning = np.load(os.path.join(summary_folder, 'temp', 
-                                            'Tuning-%s-%i.npy' % (c, i)),
-                                    allow_pickle=True).item()
-                Tunings.append(Tuning)
-
-        # # saving data
-        np.save(os.path.join(summary_folder, 'Tunings_%s.npy' % c), Tunings)
+            # # saving data
+            np.save(os.path.join(summary_folder, 'Tunings_%s.npy' % c), Tunings)
 
         else:
             print()
