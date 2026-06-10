@@ -40,13 +40,13 @@ def process_file(filename, i, c, quantity):
 
     # statistical test for visually-evoked-responses
     if quantity=='Deconvolved':
-        stat_test_props=dict(interval_pre=[-1.,0],
-                            interval_post=[1.,2.],                                   
+        stat_test_props=dict(interval_pre=[-1.,-0.2],
+                            interval_post=[0.2, 1.0],                                   
                             test='ttest',                                            
                             sign='positive')
     else:
-        stat_test_props=dict(interval_pre=[-1.,-0.2],
-                            interval_post=[0.2, 1.0],                                   
+        stat_test_props=dict(interval_pre=[-1.,0],
+                            interval_post=[1.,2.],                                   
                             test='ttest',                                            
                             sign='positive')
 
