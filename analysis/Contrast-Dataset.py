@@ -24,12 +24,13 @@ from Dataset_Organization import datasets_func, summary_folder
 datasets = datasets_func('angle', [0., 90.])
 
 from Preprocessing_Settings import get_dFoF_params
+quantity = 'Deconvolved'
 
 # %%
 # to be a valid dataset:
 nMIN_DATAFILES = 2
 
-def process_file(filename, i, c):
+def process_file(filename, i, c, quantity):
 
     # to be a valid datafile:
     nMIN_ROIs = 4
@@ -38,10 +39,17 @@ def process_file(filename, i, c):
     dFoF_parameters = get_dFoF_params(c)
 
     # statistical test for visually-evoked-responses
-    stat_test_props=dict(interval_pre=[-1.,0],
-                         interval_post=[1.,2.],                                   
-                         test='ttest',                                            
-                         sign='positive')
+    if quantity=='Deconvolved':
+        stat_test_props=dict(interval_pre=[-1.,0],
+                            interval_post=[1.,2.],                                   
+                            test='ttest',                                            
+                            sign='positive')
+    else:
+        stat_test_props=dict(interval_pre=[-1.,-0.2],
+                            interval_post=[0.2, 1.0],                                   
+                            test='ttest',                                            
+                            sign='positive')
+
 
     response_significance_threshold=5e-2
 
@@ -52,16 +60,18 @@ def process_file(filename, i, c):
 
     if data.nROIs>=nMIN_ROIs:
 
+        if quantity=='Deconvolved':
+            data.build_Deconvolved()
+
         # try:
         if True:
             Episodes = EpisodeData(data, 
-                                    quantities=['dFoF'], 
+                                    quantities=[quantity],
                                     protocol_name=protocol_name, 
                                     verbose=False)
 
-            print(c)
             Sensitivity = compute_sensitivity_per_cells(data, Episodes, 
-                                                        quantity='dFoF', 
+                                                        quantity=quantity,
                                                         stat_test_props=stat_test_props, 
                                                         response_significance_threshold = response_significance_threshold, 
                                                         angle = float(c.split('angle-')[1][:3]))
@@ -72,7 +82,7 @@ def process_file(filename, i, c):
             Sensitivity['subject'] = data.nwbfile.subject.subject_id
 
             np.save(os.path.join(summary_folder, 'temp', 
-                                 'Sensitivity-%s-%i.npy' % (c, i)),
+                                 'Sensitivity-%s-%s-%i.npy' % (quantity, c, i)),
                     Sensitivity)
             print('      [v] --> included, n=%i ROIs ' % data.nROIs)
         # except BaseException as be:
@@ -143,7 +153,8 @@ if __name__=='__main__':
                     for i in range(i0,imax):
                         proc = multiprocessing.Process(\
                                             target=process_file, 
-                                            args=(DATASET['files'][cond][i], i, c))
+                                            args=(DATASET['files'][cond][i], 
+                                                  i, c, quantity))
                         procs.append(proc)
                         proc.start()
 
@@ -154,7 +165,7 @@ if __name__=='__main__':
                 #####################################
                 ###### UN-PARALLELIZED VERSION ######
                 for i, f in enumerate(DATASET['files'][cond]):
-                    process_file(f, i, c)
+                    process_file(f, i, c, quantity)
                 #####################################
 
             # now that we have stored all datafile outputs
@@ -162,14 +173,14 @@ if __name__=='__main__':
             for i, f in enumerate(DATASET['files'][cond]):
 
                 if os.path.isfile(os.path.join(summary_folder, 'temp', 
-                                              'Sensitivity-%s-%i.npy' % (c, i))):
+                                              'Sensitivity-%s-%s-%i.npy' % (quantity, c, i))):
                     Sensitivity = np.load(os.path.join(summary_folder, 'temp', 
-                                                'Sensitivity-%s-%i.npy' % (c, i)),
+                                                'Sensitivity-%s-%s-%i.npy' % (quantity, c, i)),
                                         allow_pickle=True).item()
                     Sensitivities.append(Sensitivity)
 
             # # saving data
-            np.save(os.path.join(summary_folder, 'Sensitivities_%s.npy' % c), 
+            np.save(os.path.join(summary_folder, 'Sensitivities_%s_%s.npy' % (quantity, c)), 
                     Sensitivities)
 
         else:
