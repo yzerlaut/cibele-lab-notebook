@@ -7,7 +7,7 @@ import multiprocessing
 import numpy as np
 
 sys.path += [os.path.join(os.path.expanduser('~'),\
-                          'lab-notebook', 'cibele', 'physion', 'src')]
+                    'lab-notebook', 'cibele', 'physion', 'src')]
 
 from physion.analysis.read_NWB\
                          import scan_folder_for_NWBfiles, Data
