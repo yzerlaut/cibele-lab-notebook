@@ -122,7 +122,7 @@ if __name__=='__main__':
         #   FILTER:
         # ----------
         # 1) protocol type: orientation tuning
-        cond = np.array([np.sum(['8orientation' in p for p in protocols])\
+        cond = np.array([np.sum(['ff-gratings-8orientation-2contrasts-15repeats' in p for p in protocols])\
                         for protocols in DATASET['protocols']], dtype=bool)
         # 2) age condition (not None only if young)
         if (datasets[c]['age_interval'] is not None):
